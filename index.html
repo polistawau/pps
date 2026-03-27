@@ -581,56 +581,43 @@ select.fsel option{background:#0d1628}
 
 <!-- Firebase SDK -->
 <script type="module">
-  // === GANTIKAN CONFIG FIREBASE DI SINI ===
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
+  // === GANTIKAN CONFIG FIREBASE DI SINI ===
   const firebaseConfig = {
-    apiKey: "MASUKKAN_API_KEY_ANDA",
-    authDomain: "MASUKKAN_AUTH_DOMAIN_ANDA",
-    projectId: "MASUKKAN_PROJECT_ID_ANDA",
-    storageBucket: "MASUKKAN_STORAGE_BUCKET_ANDA",
-    messagingSenderId: "MASUKKAN_MESSAGING_SENDER_ID_ANDA",
-    appId: "MASUKKAN_APP_ID_ANDA"
+    apiKey: "AIzaSyB7VnojyfycCBXe4gRGGPwjKw-8X31JiBs",
+    authDomain: "spas-ipd-tawau.firebaseapp.com",
+    projectId: "spas-ipd-tawau",
+    storageBucket: "spas-ipd-tawau.firebasestorage.app",
+    messagingSenderId: "242316308761",
+    appId: "1:242316308761:web:13d8f003b6de3d9c319588",
+    measurementId: "G-132SH6R2E0"
   };
 
-  // Inisialisasi Firebase
-  const app   = initializeApp(firebaseConfig);
-  const auth  = getAuth(app);
-  const db    = getFirestore(app);
-  const stor  = getStorage(app);
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  const stor = getStorage(app);
 
-  // ── Expose ke window supaya boleh diakses dari script biasa ──────────────
   window.FB = { app, auth, db, stor,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
     signOut, onAuthStateChanged,
-    doc, setDoc, getDoc, collection, addDoc, getDocs,
+    doc, setDoc, getDoc, collection, addDoc,
     query, where, orderBy, onSnapshot, serverTimestamp, updateDoc,
     ref, uploadString, getDownloadURL
   };
 
-  // ── Semak status auth masa nyata ─────────────────────────────────────────
   onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      // Pengguna sudah log masuk — ambil data profil dari Firestore
-      try {
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        if (snap.exists()) {
-          const data = snap.data();
-          window.FB_USER = { uid: user.uid, ...data };
-          window.FB_READY = true;
-          // Update UI profil
-          if (typeof updateProfilFromFirebase === 'function') updateProfilFromFirebase(data);
-        }
-      } catch(e) { console.log('Firestore:', e.message); }
-    } else {
-      window.FB_USER = null;
-      window.FB_READY = false;
-    }
+    if(user){
+      try{
+        const snap = await getDoc(doc(db,'users',user.uid));
+        if(snap.exists()){ window.FB_USER = {uid:user.uid,...snap.data()}; }
+      }catch(e){}
+    } else { window.FB_USER = null; }
   });
-
   console.log('✅ Firebase SPAS IPD Tawau bersedia');
 </script>
 
@@ -2113,28 +2100,7 @@ function selRole(r,el){
   }
 }
 
-async function doLogin(){
-  const email = document.getElementById('lid').value.trim();
-  const pw    = document.getElementById('lpw').value;
-  const btn   = document.querySelector('.lbtn');
-
-  if(!email || !pw){ alert('Sila masukkan ID/Emel dan Kata Laluan!'); return; }
-  if(btn){ btn.textContent='⏳ MENGESAHKAN...'; btn.disabled=true; }
-
-  try {
-    if(window.FB && window.FB.auth){
-      var loginEmail = email.includes('@') ? email : email.toLowerCase()+'@spas-ipd-tawau.pdrm.gov.my';
-      const cred = await window.FB.signInWithEmailAndPassword(window.FB.auth, loginEmail, pw);
-      const snap = await window.FB.getDoc(window.FB.doc(window.FB.db,'users',cred.user.uid));
-      if(snap.exists()){ var d=snap.data(); curRole=d.role||curRole; window.FB_USER={uid:cred.user.uid,...d}; }
-    }
-  } catch(e){ console.log('Firebase login:',e.message); }
-
-  if(btn){ btn.textContent='▶ LOG MASUK SISTEM'; btn.disabled=false; }
-  loginSuccess();
-}
-
-function loginSuccess(){
+function doLogin(){
   document.getElementById('login').style.display='none';
   document.getElementById('app').style.display='flex';
   renderSidebar();renderBotNav();renderSekolahTable();renderPPSTable();renderDashPPS();populateSelects();
@@ -2142,14 +2108,898 @@ function loginSuccess(){
   const rl={admin:'PENTADBIR',pps:'PPS',sekolah:'SEKOLAH'};
   const av={admin:'AD',pps:'AZ',sekolah:'SM'};
   document.getElementById('tbrl').textContent=rl[curRole];
-  const fbUser=window.FB_USER;
-  const initials=fbUser?(fbUser.nama||'').split(' ').filter(function(w){return w.match(/^[A-Z]/);}).slice(0,2).map(function(w){return w[0];}).join('')||av[curRole]:av[curRole];
-  document.getElementById('tbav').textContent=initials||av[curRole];
+  document.getElementById('tbav').textContent=av[curRole];
   const dt=new Date().toLocaleDateString('ms-MY',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const el=document.getElementById('phdt');if(el)el.textContent='IPD Tawau · '+dt;
   startClock();
-  setTimeout(function(){renderProfilPPS();renderGPS();drawCharts();populateTugasanSelects();injectSignupLogos();injectDashLogo();renderProfil();loadProfilPhoto();listenMesejFirebase();},100);
-  var t=document.getElementById('notif-toast');
-  if(!t){t=document.createElement('div');t.id='notif-toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,229,255,.15);border:1px solid var(--cyan);color:var(--cyan);padding:10px 20px;border-radius:8px;font-family:var(--fm);font-size:12px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;max-width:90vw';document.body.appendChild(t);}
+  setTimeout(()=>{renderProfilPPS();renderGPS();drawCharts();populateTugasanSelects();injectSignupLogos();injectDashLogo();renderProfil();loadProfilPhoto();setupLawatanPage();},100);
+  // Toast element
+  if(!document.getElementById('notif-toast')){
+    const t=document.createElement('div');t.id='notif-toast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,229,255,.15);border:1px solid var(--cyan);color:var(--cyan);padding:10px 20px;border-radius:8px;font-family:var(--fm);font-size:12px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;max-width:90vw';
+    document.body.appendChild(t);
+  }
 }
 
+function populateTugasanSelects(){
+  const ts=document.getElementById('tug-pps-sel');
+  if(ts){ts.innerHTML='';PPS_LIST.forEach(p=>{ts.innerHTML+=`<option value="${p.id}">${p.pangkat} ${p.nm}</option>`;});}
+  const tsk=document.getElementById('tug-skl-sel');
+  if(tsk){tsk.innerHTML='';SEKOLAH_DATA.forEach(d=>{tsk.innerHTML+=`<option value="${d.kod}">${d.nm}</option>`;});}
+}
+
+async function doLogout(){
+  await doLogoutFirebase();
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='flex';
+  clearInterval(clockInt);
+}
+
+function renderSidebar(){
+  const sb=document.getElementById('sb');sb.innerHTML='';
+  NAV[curRole].forEach(item=>{
+    if(item.s){const d=document.createElement('div');d.className='sbsect';d.textContent=item.s;sb.appendChild(d);}
+    else{const d=document.createElement('div');d.className='nvi';d.id='nv-'+item.id;
+      d.innerHTML=`<span class="nvi-ic">${item.ic}</span>${item.lb}${item.bdg?`<span class="nvbdg">${item.bdg}</span>`:''}`;
+      d.onclick=()=>goPage('pg-'+item.id);sb.appendChild(d);}
+  });
+}
+
+function renderBotNav(){
+  const bb=document.getElementById('botbar');bb.innerHTML='';
+  const nav=document.createElement('div');nav.className='botbar-nav';
+  BOTNAV[curRole].forEach(item=>{
+    const d=document.createElement('div');d.className='bn';d.id='bn-'+item.id;
+    d.innerHTML=`<div class="bn-ic${item.bdg?' bnbdg':''}" ${item.bdg?`data-count="${item.bdg}"`:''}>${item.ic}</div><div class="bn-lb">${item.lb}</div>`;
+    d.onclick=()=>goPage('pg-'+item.id);nav.appendChild(d);
+  });
+  bb.appendChild(nav);
+  const copy=document.createElement('div');copy.className='botbar-copy';
+  copy.textContent='© HAK CIPTA UNIT MEDIA  ·  POLIS DAERAH TAWAU  ·  PDRM';
+  bb.appendChild(copy);
+}
+
+function renderSekolahTable(data){
+  const list = data || SEKOLAH_DATA;
+  const tbody = document.getElementById('skl-tbody');
+  if(!tbody)return;
+  if(list.length===0){tbody.innerHTML=`<tr><td colspan="9"><div class="sk-no">Tiada sekolah dijumpai</div></td></tr>`;return;}
+  tbody.innerHTML = list.map((d,i)=>{
+    const pct = Math.round(d.lawatan/d.sasaran*100);
+    const barCol = pct>=100?'var(--green)':pct>=75?'var(--gold)':'var(--red)';
+    const stat = pct>=100?'<span class="b bg">100%</span>':pct>=75?`<span class="b bo">${pct}%</span>`:`<span class="b br">${pct}%</span>`;
+    return `<tr>
+      <td class="mono">${i+1}</td>
+      <td class="mono">${d.kod}</td>
+      <td style="min-width:220px"><b>${d.nm}</b></td>
+      <td><span class="schip ${d.chip}">${d.tip}</span></td>
+      <td style="min-width:140px;font-size:11px">${d.pps1.nm.split(' ').slice(0,3).join(' ')}</td>
+      <td style="min-width:140px;font-size:11px">${d.pps2.nm.split(' ').slice(0,3).join(' ')}</td>
+      <td class="mono">${d.lawatan}/${d.sasaran}</td>
+      <td style="min-width:90px">
+        <div class="prog" style="margin-bottom:4px"><div class="pf" style="width:${pct}%;background:${barCol}"></div></div>
+        ${stat}
+      </td>
+      <td><button class="btn btgh btsm" onclick="goPage('pg-sekolah-dashboard')">Lihat</button></td>
+    </tr>`;
+  }).join('');
+  const lbl = document.getElementById('skl-count-lbl');
+  if(lbl) lbl.textContent = `Direktori Sekolah (${list.length} sekolah)`;
+}
+
+function renderPPSTable(){
+  const tbody=document.getElementById('pps-tbody');if(!tbody)return;
+  tbody.innerHTML=PPS_LIST.map((p,i)=>{
+    const s1 = SEKOLAH_DATA.find(s=>s.pps1.id===p.id);
+    const s2 = SEKOLAH_DATA.filter(s=>s.pps2.id===p.id)[0];
+    const skl1 = s1 ? s1.nm.replace('Sekolah Kebangsaan ','SK ').replace('Sekolah Menengah Kebangsaan ','SMK ') : '—';
+    const skl2 = s2 ? s2.nm.replace('Sekolah Kebangsaan ','SK ').replace('Sekolah Menengah Kebangsaan ','SMK ') : '—';
+    const lawatan = 12 + (i % 5);
+    const pct = lawatan >= 16 ? 100 : lawatan >= 14 ? 92 : lawatan >= 12 ? 80 : 75;
+    const status = pct>=95?'<span class="b bg">CEMERLANG</span>':pct>=85?'<span class="b bc">BAIK</span>':'<span class="b br">PERLU BAIKI</span>';
+    const lpPct = pct>=95?'<span class="b bg">100%</span>':pct>=85?`<span class="b bo">${pct}%</span>`:`<span class="b br">${pct}%</span>`;
+    return `<tr>
+      <td class="mono">${p.id}</td>
+      <td style="min-width:160px"><b>${p.nm}</b></td>
+      <td class="mono">RMP${String(10000+i*1111).slice(0,5)}</td>
+      <td class="mono">${p.pangkat}</td>
+      <td style="min-width:160px;font-size:11px">${skl1.slice(0,30)}</td>
+      <td style="min-width:160px;font-size:11px">${skl2.slice(0,30)}</td>
+      <td class="mono">${lawatan}/16</td>
+      <td>${lpPct}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDashPPS(){
+  const el = document.getElementById('dash-pps-list');if(!el)return;
+  const ppsShow = PPS_LIST.slice(0,6);
+  el.innerHTML = ppsShow.map((p,i)=>{
+    const lawatan = 12 + (i%5);
+    const pct = Math.round(lawatan/16*100);
+    const av = p.nm.split(' ').filter(w=>w.match(/^[A-Z]/)).slice(0,2).map(w=>w[0]).join('');
+    const cols=['var(--cyan)','var(--purple)','var(--green)','var(--red)','var(--gold)','var(--cyan)'];
+    const col = cols[i%6];
+    const barCol = pct>=95?'var(--green)':pct>=80?'var(--gold)':'var(--red)';
+    const stat = pct>=95?'<span class="b bg">'+pct+'%</span>':pct>=80?'<span class="b bo">'+pct+'%</span>':'<span class="b br">'+pct+'%</span>';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:12px;flex-shrink:0;border:1.5px solid ${col};background:${col}22;color:${col}">${av||p.pangkat[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.pangkat} ${p.nm.split(' ').slice(0,3).join(' ')}</div>
+        <div style="margin-top:4px"><div class="prog"><div class="pf" style="width:${pct}%;background:${barCol}"></div></div></div>
+      </div>
+      ${stat}
+    </div>`;
+  }).join('');
+}
+
+function populateSelects(){
+  // PPS sekolah list
+  const psel = document.getElementById('pps-skl-sel');
+  if(psel){psel.innerHTML='';SEKOLAH_DATA.forEach(d=>{psel.innerHTML+=`<option value="${d.kod}">${d.nm}</option>`});}
+  // Lawatan sekolah sel
+  const lsel = document.getElementById('lawatan-skl-sel');
+  if(lsel){lsel.innerHTML='';SEKOLAH_DATA.forEach(d=>{lsel.innerHTML+=`<option value="${d.kod}">${d.nm}</option>`});}
+  // PPS selects for tambah sekolah
+  ['new-pps1','new-pps2'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML='<option value="">-- Pilih PPS --</option>';
+    PPS_LIST.forEach(p=>{el.innerHTML+=`<option value="${p.id}">${p.pangkat} ${p.nm}</option>`});
+  });
+}
+
+function filterSekolah(){
+  const q=(document.getElementById('skl-srch')||{value:''}).value.toLowerCase();
+  const j=(document.getElementById('skl-filter-jenis')||{value:''}).value;
+  const st=(document.getElementById('skl-filter-status')||{value:''}).value;
+  let filtered=SEKOLAH_DATA.filter(d=>{
+    const nm=d.nm.toLowerCase();
+    const matchQ = !q || nm.includes(q);
+    const matchJ = !j || d.jenis===j || d.tip===j;
+    const matchSt = !st || (st==='ok'&&d.lawatan>=d.sasaran) || (st==='warn'&&d.lawatan<d.sasaran);
+    return matchQ&&matchJ&&matchSt;
+  });
+  renderSekolahTable(filtered);
+}
+
+function goPage(pid){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  const p=document.getElementById(pid);if(p)p.classList.add('on');
+  document.querySelectorAll('.nvi').forEach(n=>n.classList.remove('on'));
+  document.querySelectorAll('.bn').forEach(n=>n.classList.remove('on'));
+  const nid=pid.replace('pg-','');
+  const nv=document.getElementById('nv-'+nid);if(nv)nv.classList.add('on');
+  const bn=document.getElementById('bn-'+nid);if(bn)bn.classList.add('on');
+  document.getElementById('mc').scrollTop=0;
+  if(pid==='pg-profil'){renderProfil();loadProfilPhoto();} if(pid==='pg-mesej'){renderMesejContacts();} if(pid==='pg-lawatan'){setupLawatanPage();}
+}
+
+function openM(id){document.getElementById(id).classList.add('on')}
+function closeM(id){document.getElementById(id).classList.remove('on')}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('on')}));
+
+function swTab(el,tid){
+  el.parentNode.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['tb-mg','tb-bl','tb-th'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=id===tid?'block':'none';});
+}
+
+function setS(n){
+  document.querySelectorAll('#star-rate span').forEach((s,i)=>{
+    s.style.color=i<n?'var(--gold)':'rgba(255,214,0,.2)';
+    s.style.textShadow=i<n?'0 0 12px rgba(255,214,0,.5)':'none';
+  });
+}
+
+function startClock(){
+  const c=document.getElementById('clk');
+  const t=()=>{const d=new Date();c.textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');};
+  t();clockInt=setInterval(t,1000);
+}
+
+function renderProfilPPS(){
+  const el=document.getElementById('profil-pps-list');if(!el)return;
+  const colors=['var(--cyan)','var(--purple)','var(--green)','var(--red)','var(--gold)','var(--cyan)'];
+  el.innerHTML=PPS_LIST.map((p,i)=>{
+    const skl=SEKOLAH_DATA.filter(s=>s.pps1.id===p.id||s.pps2.id===p.id);
+    const skl1=skl[0]?skl[0].nm:'—';
+    const skl2=skl[1]?skl[1].nm:'—';
+    const av=p.nm.replace(/bin |binti |a\/l |anak /gi,'').split(' ').filter(w=>w.match(/^[A-Z]/)).slice(0,2).map(w=>w[0]).join('');
+    const col=colors[i%colors.length];
+    const lawatan=12+(i%5);const pct=Math.round(lawatan/16*100);
+    const status=pct>=95?'<span class="b bg">CEMERLANG</span>':pct>=85?'<span class="b bc">BAIK</span>':'<span class="b br">PERLU BAIKI</span>';
+    const rating=(3.5+((i*17)%15)/10).toFixed(1);
+    const stat=p.id==='PPS004'?'<span class="b bo">CUTI</span>':p.id==='PPS014'?'<span class="b bm">LATIHAN</span>':'<span class="b bg">AKTIF</span>';
+    return `<div class="pps-profile-card">
+      <div class="pps-av-lg" style="background:${col}22;border-color:${col};color:${col}">${av||p.pangkat[0]}</div>
+      <div class="pps-detail">
+        <div class="pps-name">${p.pangkat} ${p.nm}</div>
+        <div class="pps-meta">${p.id} · IPD Tawau · 📞 ${p.tel}</div>
+        <div class="pps-skl">
+          <span class="b bc" style="font-size:10px">${skl1.slice(0,28)}</span>
+          ${skl2!=='—'?`<span class="b bc" style="font-size:10px">${skl2.slice(0,28)}</span>`:''}
+        </div>
+        <div class="pps-stat-row">
+          <div class="pps-stat"><div class="sv">${lawatan}/16</div><div class="sl">Lawatan</div></div>
+          <div class="pps-stat"><div class="sv">${pct}%</div><div class="sl">Laporan</div></div>
+          <div class="pps-stat"><div class="sv">${rating}★</div><div class="sl">Rating</div></div>
+          <div>${stat}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGPS(){
+  const el=document.getElementById('gps-list');if(!el)return;
+  const locs=['Di sekolah','Dalam perjalanan','IPD Tawau','Di sekolah','Dalam perjalanan','Di sekolah'];
+  const statuses=['bg','bc','bm','bg','bc','bg'];
+  el.innerHTML=PPS_LIST.slice(0,12).map((p,i)=>{
+    const av=p.nm.replace(/bin |binti |a\/l |anak /gi,'').split(' ').filter(w=>w.match(/^[A-Z]/)).slice(0,2).map(w=>w[0]).join('');
+    const loc=locs[i%6];const stat=statuses[i%6];
+    const skl=SEKOLAH_DATA.find(s=>s.pps1.id===p.id);
+    const sn=skl?skl.nm.slice(0,30):'IPD Tawau';
+    const time=`0${8+(i%3)}:${i%2===0?'30':'45'}`;
+    const dotC=stat==='bg'?'var(--green)':stat==='bc'?'var(--cyan)':'var(--muted)';
+    return `<div class="gps-card">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="gps-dot" style="background:${dotC};box-shadow:0 0 8px ${dotC}"></div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;font-family:var(--fd)">${p.pangkat} ${p.nm.split(' ').slice(0,3).join(' ')}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--fm);margin-top:2px">${sn}</div>
+        </div>
+        <div style="text-align:right">
+          <span class="b ${stat}">${loc}</span>
+          <div style="font-size:10px;color:var(--muted);font-family:var(--fm);margin-top:4px">${time}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  const gt=document.getElementById('gps-time');
+  if(gt){const d=new Date();gt.textContent=d.toLocaleTimeString('ms-MY');}
+}
+
+function drawCharts(){
+  // Donut - jenis sekolah
+  const dc=document.getElementById('donut-jenis');if(!dc)return;
+  const ctx=dc.getContext('2d');
+  const data=[53,7,18,1,1,1];
+  const colors=['#00e5ff','#ff6d00','#d500f9','#ffd600','#00e676','#ff1744'];
+  const total=data.reduce((a,b)=>a+b,0);
+  let angle=-Math.PI/2;
+  data.forEach((v,i)=>{
+    ctx.beginPath();ctx.moveTo(65,65);
+    ctx.arc(65,65,55,angle,angle+(v/total)*Math.PI*2);
+    ctx.closePath();ctx.fillStyle=colors[i];ctx.fill();
+    angle+=(v/total)*Math.PI*2;
+  });
+  ctx.beginPath();ctx.arc(65,65,30,0,Math.PI*2);ctx.fillStyle='#0d1628';ctx.fill();
+  ctx.fillStyle='#dde8ff';ctx.font='bold 14px Rajdhani,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('81',65,62);ctx.font='10px Share Tech Mono,monospace';ctx.fillStyle='#6b82b4';ctx.fillText('SEKOLAH',65,76);
+
+  // Bar - pematuhan
+  const bc=document.getElementById('bar-pematuhan');if(!bc)return;
+  const bx=bc.getContext('2d');
+  const months=['JAN','FEB','MAC'];const vals=[87.5,92.3,95.1];
+  const barW=50;const gap=30;const startX=40;const baseY=140;
+  bx.fillStyle='#dde8ff';bx.font='10px Share Tech Mono,monospace';bx.textAlign='center';
+  months.forEach((m,i)=>{
+    const x=startX+i*(barW+gap);const h=vals[i]*1.3;
+    const g=bx.createLinearGradient(0,baseY-h,0,baseY);
+    g.addColorStop(0,'rgba(0,229,255,0.8)');g.addColorStop(1,'rgba(0,229,255,0.2)');
+    bx.fillStyle=g;bx.fillRect(x,baseY-h,barW,h);
+    bx.fillStyle='#dde8ff';bx.fillText(m,x+barW/2,baseY+14);
+    bx.fillStyle='#00e5ff';bx.fillText(vals[i]+'%',x+barW/2,baseY-h-8);
+  });
+  bx.strokeStyle='rgba(0,229,255,0.15)';bx.setLineDash([4,4]);
+  for(let y=20;y<baseY;y+=30){bx.beginPath();bx.moveTo(20,y);bx.lineTo(280,y);bx.stroke();}
+
+  // Line - trend
+  const lc=document.getElementById('line-trend');if(!lc)return;
+  const lx=lc.getContext('2d');
+  const pts=[220,245,258,271,263,280,290,283,295,298,305,312];
+  const mx=Math.max(...pts),mn=Math.min(...pts);
+  const pw=lc.width-60,ph=lc.height-40,ox=30,oy=10;
+  const tx=i=>ox+i*(pw/(pts.length-1));
+  const ty=v=>oy+ph-(v-mn)/(mx-mn)*ph;
+  // gradient fill
+  const lg=lx.createLinearGradient(0,oy,0,oy+ph);
+  lg.addColorStop(0,'rgba(0,229,255,0.2)');lg.addColorStop(1,'rgba(0,229,255,0)');
+  lx.beginPath();lx.moveTo(tx(0),ty(pts[0]));
+  pts.forEach((_,i)=>{if(i)lx.lineTo(tx(i),ty(pts[i]));});
+  lx.lineTo(tx(pts.length-1),oy+ph);lx.lineTo(tx(0),oy+ph);lx.closePath();
+  lx.fillStyle=lg;lx.fill();
+  // line
+  lx.beginPath();lx.moveTo(tx(0),ty(pts[0]));
+  pts.forEach((_,i)=>{if(i)lx.lineTo(tx(i),ty(pts[i]));});
+  lx.strokeStyle='#00e5ff';lx.lineWidth=2;lx.setLineDash([]);lx.stroke();
+  // dots & labels
+  const mNames=['J','F','M','A','M','J','J','O','S','O','N','D'];
+  pts.forEach((v,i)=>{
+    lx.beginPath();lx.arc(tx(i),ty(v),4,0,Math.PI*2);lx.fillStyle='#00e5ff';lx.fill();
+    lx.fillStyle='#6b82b4';lx.font='9px Share Tech Mono,monospace';lx.textAlign='center';
+    lx.fillText(mNames[i],tx(i),oy+ph+14);
+  });
+}
+
+function simulateDownload(filename){
+  const el=document.getElementById('notif-toast');
+  const msg=`⬇ Muat turun "${filename}" sedang diproses...`;
+  if(el){el.textContent=msg;el.style.opacity='1';setTimeout(()=>{el.style.opacity='0'},3000);}
+  else{alert(msg);}
+}
+
+// Override doLogin to also render new modules
+const _origLogin = doLogin;
+
+
+function switchAuth(mode){
+  var isLogin = mode==='login';
+  var ls = document.getElementById('login-section');
+  var ss = document.getElementById('signup-section');
+  if(ls) ls.classList.toggle('hide', !isLogin);
+  if(ss) ss.classList.toggle('on', !isLogin);
+  if(!isLogin) populateSignupSchools();
+  // Reset signup forms bila kembali ke login
+  if(isLogin){
+    var sf = document.getElementById('signup-forms');
+    var sc = document.getElementById('signup-success');
+    if(sf) sf.style.display='block';
+    if(sc) sc.classList.remove('on');
+  }
+}
+function selectSignupRole(r,el){
+  document.querySelectorAll('#signup-role-grid .rb').forEach(function(b){b.classList.remove('on');});
+  if(el) el.classList.add('on');
+  ['form-pps','form-sekolah','form-admin'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.style.display='none';
+  });
+  var target = r==='pps'?'form-pps':r==='sekolah'?'form-sekolah':'form-admin';
+  var te = document.getElementById(target);
+  if(te) te.style.display='block';
+}
+function populateSignupSchools(){
+  var sel=document.getElementById('su-skl-sekolah');
+  if(!sel||sel.options.length>1)return;
+  sel.innerHTML='<option value="">-- Pilih Sekolah --</option>';
+  SEKOLAH_DATA.forEach(function(d){
+    var o=document.createElement('option');o.value=d.kod;o.textContent=d.nm;sel.appendChild(o);
+  });
+  sel.onchange=function(){document.getElementById('su-skl-kod').value=this.value;};
+}
+async function submitSignup(role){
+  var fields=[];
+  if(role==='pps')fields=['su-pps-nama','su-pps-badan','su-pps-pangkat','su-pps-jawatan','su-pps-tempat','su-pps-pw'];
+  else if(role==='sekolah')fields=['su-skl-nama','su-skl-gred','su-skl-jawatan','su-skl-sekolah','su-skl-pw'];
+  else if(role==='admin')fields=['su-adm-nama','su-adm-badan','su-adm-pangkat','su-adm-jawatan','su-adm-tempat','su-adm-kod','su-adm-pw'];
+  var valid=true;
+  fields.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&!el.value.trim()){el.style.borderColor='var(--red)';el.style.boxShadow='0 0 0 3px rgba(255,23,68,0.1)';valid=false;}
+    else if(el){el.style.borderColor='';el.style.boxShadow='';}
+  });
+  if(!valid){alert('Sila lengkapkan semua maklumat yang diperlukan!');return;}
+  // Cuba Firebase signup
+  var fbData={role:role};
+  var fbPw='';
+  if(role==='pps'){
+    fbData.nama=document.getElementById('su-pps-nama').value.trim();
+    fbData.badan=document.getElementById('su-pps-badan').value.trim();
+    fbData.pangkat=document.getElementById('su-pps-pangkat').value;
+    fbData.jawatan=document.getElementById('su-pps-jawatan').value.trim();
+    fbData.tempat=document.getElementById('su-pps-tempat').value.trim();
+    fbPw=document.getElementById('su-pps-pw').value;
+  } else if(role==='sekolah'){
+    fbData.nama=document.getElementById('su-skl-nama').value.trim();
+    fbData.gred=document.getElementById('su-skl-gred').value;
+    fbData.jawatan=document.getElementById('su-skl-jawatan').value.trim();
+    fbData.sekolah=document.getElementById('su-skl-sekolah').value;
+    fbData.kodSkl=document.getElementById('su-skl-kod').value;
+    fbPw=document.getElementById('su-skl-pw').value;
+  } else if(role==='admin'){
+    fbData.nama=document.getElementById('su-adm-nama').value.trim();
+    fbData.badan=document.getElementById('su-adm-badan').value.trim();
+    fbData.pangkat=document.getElementById('su-adm-pangkat').value;
+    fbData.jawatan=document.getElementById('su-adm-jawatan').value.trim();
+    fbData.tempat=document.getElementById('su-adm-tempat').value.trim();
+    fbPw=document.getElementById('su-adm-pw').value;
+  }
+  await signupFirebase(role, fbData, fbPw);
+  document.getElementById('signup-forms').style.display='none';
+  document.getElementById('signup-success').classList.add('on');
+}
+function injectDashLogo(){
+  var el = document.getElementById('dash-pdrm-logo');
+  if(!el) return;
+  var src = document.querySelector('.bwrap img') ? document.querySelector('.bwrap img').src : '';
+  if(src) el.innerHTML = '<img src="'+src+'" style="width:60px;height:60px;object-fit:contain">';
+}
+function injectSignupLogos(){
+  var btns=document.querySelectorAll('#login-section .rb img');
+  var p=document.getElementById('su-pdrm-ic');
+  var j=document.getElementById('su-jata-ic');
+  if(btns[0]&&p)p.src=btns[0].src;
+  if(btns[1]&&j)j.src=btns[1].src;
+}
+
+
+// Data profil mengikut role
+const PROFIL_DATA = {
+  pps:{
+    nama:'INSP Azman bin Razali',
+    av:'AZ', avCol:'var(--cyan)', avBg:'rgba(0,229,255,0.15)',
+    badge:'PEGAWAI PPS', badgeClass:'bc',
+    tag:'PROFIL · PPS', sub:'Pegawai Perhubungan Sekolah · IPD Tawau',
+    info:[
+      {lbl:'No. Pegawai', val:'PPS001'},
+      {lbl:'Nombor Badan', val:'RF/12345'},
+      {lbl:'Pangkat', val:'INSP'},
+      {lbl:'Jawatan / Bahagian', val:'Bahagian Siasatan Jenayah'},
+      {lbl:'Tugas Tambahan', val:'Pegawai Perhubungan Sekolah (PPS)'},
+      {lbl:'Tempat Tugas', val:'IPD Tawau'},
+      {lbl:'No. Telefon', val:'019-3456789'},
+    ],
+    stats:[
+      {val:'22', lbl:'Lawatan Bulan Ini'},
+      {val:'4.8★', lbl:'Rating Avg'},
+      {val:'21', lbl:'Laporan Hantar'},
+    ],
+    editFields:[
+      {lbl:'Nama Penuh', id:'ep-nama', val:'INSP Azman bin Razali'},
+      {lbl:'Nombor Badan (RF/ atau G/)', id:'ep-badan', val:'RF/12345'},
+      {lbl:'Pangkat', id:'ep-pangkat', val:'SIP', type:'select',
+        opts:['KONST','L/KPL','KPL','SJN','SM','SI','INSP','ASP']},
+      {lbl:'Jawatan / Bahagian', id:'ep-jawatan', val:'Bahagian Siasatan Jenayah'},
+      {lbl:'Tempat Tugas', id:'ep-tempat', val:'IPD Tawau'},
+      {lbl:'No. Telefon', id:'ep-tel', val:'019-3456789'},
+      {lbl:'Kata Laluan Baharu (kosongkan jika tiada perubahan)', id:'ep-pw', val:'', type:'password'},
+    ]
+  },
+  sekolah:{
+    nama:'Pn. Siti Rahimah binti Ahmad',
+    av:'SR', avCol:'var(--gold)', avBg:'rgba(255,214,0,0.15)',
+    badge:'WAKIL SEKOLAH', badgeClass:'bo',
+    tag:'PROFIL · SEKOLAH', sub:'SMK Tawau · BKT001',
+    info:[
+      {lbl:'Nama Penuh', val:'Pn. Siti Rahimah binti Ahmad'},
+      {lbl:'Gred', val:'DGA44'},
+      {lbl:'Jawatan', val:'Guru Kanan Perhubungan'},
+      {lbl:'Nama Sekolah', val:'SMK Tawau'},
+      {lbl:'Kod Sekolah', val:'BKT001 / TW-SM-13'},
+      {lbl:'No. Telefon', val:'089-765432'},
+    ],
+    stats:[
+      {val:'8/8', lbl:'Lawatan Bulan Ini'},
+      {val:'4.5★', lbl:'Rating Diberikan'},
+      {val:'7', lbl:'Maklum Balas'},
+    ],
+    editFields:[
+      {lbl:'Nama Penuh', id:'ep-nama', val:'Pn. Siti Rahimah binti Ahmad'},
+      {lbl:'Gred', id:'ep-gred', val:'DGA44', type:'select',
+        opts:['DGA29','DGA32','DGA34','DGA38','DGA44','DGA48','DGA52','DGA54','Lain-lain']},
+      {lbl:'Jawatan', id:'ep-jawatan', val:'Guru Kanan Perhubungan'},
+      {lbl:'No. Telefon', id:'ep-tel', val:'089-765432'},
+      {lbl:'Kata Laluan Baharu', id:'ep-pw', val:'', type:'password'},
+    ]
+  },
+  admin:{
+    nama:'DSP Mohd Faizal bin Hashim',
+    av:'MF', avCol:'var(--purple)', avBg:'rgba(213,0,249,0.15)',
+    badge:'PENTADBIR SISTEM', badgeClass:'bp',
+    tag:'PROFIL · ADMIN', sub:'IPD Tawau · Unit Media PDRM',
+    info:[
+      {lbl:'No. Pegawai', val:'ADMIN001'},
+      {lbl:'Nombor Badan', val:'RF/99001'},
+      {lbl:'Pangkat', val:'ASP'},
+      {lbl:'Jawatan', val:'Ketua Unit Media'},
+      {lbl:'Tempat Tugas', val:'IPD Tawau · Unit Media'},
+      {lbl:'No. Telefon', val:'089-123456'},
+    ],
+    stats:[
+      {val:'81', lbl:'Sekolah Aktif'},
+      {val:'24', lbl:'Pegawai PPS'},
+      {val:'312', lbl:'Lawatan Bulan Ini'},
+    ],
+    editFields:[
+      {lbl:'Nama Penuh', id:'ep-nama', val:'DSP Mohd Faizal bin Hashim'},
+      {lbl:'Nombor Badan (RF/ atau G/)', id:'ep-badan', val:'RF/99001'},
+      {lbl:'Pangkat', id:'ep-pangkat', val:'DSP', type:'select',
+        opts:['KONST','L/KPL','KPL','SJN','SM','SI','INSP','ASP']},
+      {lbl:'Jawatan', id:'ep-jawatan', val:'Ketua Unit Media'},
+      {lbl:'Tempat Tugas', id:'ep-tempat', val:'IPD Tawau · Unit Media'},
+      {lbl:'No. Telefon', id:'ep-tel', val:'089-123456'},
+      {lbl:'Kata Laluan Baharu', id:'ep-pw', val:'', type:'password'},
+    ]
+  }
+};
+
+function renderProfil(){
+  var d = PROFIL_DATA[curRole] || PROFIL_DATA['pps'];
+  // Header
+  document.getElementById('profil-tag').textContent  = d.tag;
+  document.getElementById('profil-sub').textContent  = d.sub;
+  document.getElementById('profil-nama').textContent = d.nama;
+  // Avatar
+  var av = document.getElementById('profil-av-circle');
+  av.style.background = d.avBg;
+  av.style.color      = d.avCol;
+  av.style.boxShadow  = '0 0 20px '+d.avCol.replace('var(--cyan)','rgba(0,229,255,0.3)').replace('var(--gold)','rgba(255,214,0,0.3)').replace('var(--purple)','rgba(213,0,249,0.3)');
+  document.getElementById('profil-av-text').textContent = d.av;
+  // Badge
+  var badge = document.getElementById('profil-role-badge');
+  badge.textContent = d.badge;
+  badge.className   = 'profil-role b ' + d.badgeClass;
+  // Info grid
+  var ig = document.getElementById('profil-info-grid');
+  ig.innerHTML = d.info.map(function(i){
+    return '<div class="profil-info-item"><div class="profil-info-lbl">'+i.lbl+'</div><div class="profil-info-val">'+i.val+'</div></div>';
+  }).join('');
+  // Stat grid
+  var sg = document.getElementById('profil-stat-grid');
+  sg.innerHTML = d.stats.map(function(s){
+    return '<div class="profil-stat"><div class="ps-val">'+s.val+'</div><div class="ps-lbl">'+s.lbl+'</div></div>';
+  }).join('');
+}
+
+function openEditProfil(){
+  var d = PROFIL_DATA[curRole] || PROFIL_DATA['pps'];
+  var body = document.getElementById('edit-profil-body');
+  body.innerHTML = d.editFields.map(function(f){
+    if(f.type === 'select'){
+      return '<div class="ff"><label>'+f.lbl+'</label><select class="finp" id="'+f.id+'">'+
+        f.opts.map(function(o){return '<option'+(o===f.val?' selected':'')+'>'+o+'</option>';}).join('')+
+        '</select></div>';
+    } else if(f.type === 'password'){
+      return '<div class="ff"><label>'+f.lbl+'</label><input class="finp" type="password" id="'+f.id+'" placeholder="••••••••"></div>';
+    } else {
+      return '<div class="ff"><label>'+f.lbl+'</label><input class="finp" id="'+f.id+'" value="'+f.val+'"></div>';
+    }
+  }).join('');
+  openM('m-edit-profil');
+}
+
+function saveProfilEdit(){
+  var d = PROFIL_DATA[curRole];
+  if(!d) return;
+  // Update nama jika ada
+  var namaEl = document.getElementById('ep-nama');
+  if(namaEl && namaEl.value.trim()){
+    d.nama = namaEl.value.trim();
+    // Update avatar inisial
+    var words = d.nama.split(' ');
+    d.av = words.filter(function(w){return w.match(/^[A-Z]/);}).slice(0,2).map(function(w){return w[0];}).join('');
+  }
+  closeM('m-edit-profil');
+  renderProfil();
+  // Toast notifikasi
+  var t = document.getElementById('notif-toast');
+  if(t){ t.textContent='✅ Profil berjaya dikemaskini'; t.style.opacity='1'; setTimeout(function(){t.style.opacity='0';},2500); }
+}
+
+
+function uploadProfilPhoto(input){
+  if(!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var src = e.target.result;
+    // Tunjuk gambar, sembunyikan teks inisial
+    var img  = document.getElementById('profil-av-img');
+    var txt  = document.getElementById('profil-av-text');
+    if(img && txt){
+      img.src     = src;
+      img.style.display = 'block';
+      txt.style.display = 'none';
+    }
+    // Simpan dalam localStorage supaya kekal
+    try{ localStorage.setItem('profil_photo_'+curRole, src); } catch(e){}
+    // Toast
+    var t = document.getElementById('notif-toast');
+    if(t){ t.textContent='✅ Gambar profil berjaya dikemaskini'; t.style.opacity='1'; setTimeout(function(){t.style.opacity='0';},2500); }
+  };
+  reader.readAsDataURL(file);
+}
+
+// Load gambar tersimpan
+function loadProfilPhoto(){
+  try{
+    var src = localStorage.getItem('profil_photo_'+curRole);
+    if(src){
+      var img = document.getElementById('profil-av-img');
+      var txt = document.getElementById('profil-av-text');
+      if(img && txt){
+        img.src = src;
+        img.style.display = 'block';
+        txt.style.display = 'none';
+      }
+    } else {
+      var img = document.getElementById('profil-av-img');
+      var txt = document.getElementById('profil-av-text');
+      if(img && txt){
+        img.style.display = 'none';
+        txt.style.display = '';
+      }
+    }
+  } catch(e){}
+}
+
+
+// ── DATA KENALAN & CHAT ──────────────────────────────────────────────────────
+const KENALAN = {
+  pps:[
+    {id:'smktawau', nama:'SMK Tawau', av:'SM', col:'var(--purple)', bg:'rgba(213,0,249,0.1)', unread:2,
+     msgs:[
+      {from:'in', sender:'SMK Tawau', txt:'Assalamualaikum Tuan SIP Azman. Lawatan minggu depan masih diteruskan?', masa:'Isnin 09:15'},
+      {from:'out', txt:'Waalaikumussalam. Ya, lawatan tetap diteruskan pada Selasa 31 Mac jam 9 pagi.', masa:'Isnin 09:22'},
+      {from:'in', sender:'SMK Tawau', txt:'Baik Tuan. Kami akan sediakan dewan dan pelajar. Topik ceramah kali ini?', masa:'Isnin 09:25'},
+      {from:'out', txt:'Topik: Anti-Buli dan Keselamatan Siber. Jangkaan peserta 250 orang.', masa:'Isnin 09:30'},
+      {from:'in', sender:'SMK Tawau', txt:'Terima kasih Tuan. Kami sudah bersedia. 🙏', masa:'Isnin 09:32'},
+    ]},
+    {id:'skmutiara', nama:'SK Mutiara', av:'SK', col:'var(--cyan)', bg:'rgba(0,229,255,0.1)', unread:0,
+     msgs:[
+      {from:'out', txt:'Selamat pagi. Laporan lawatan 20 Mac sudah saya hantar. Sila semak.', masa:'Khamis 08:00'},
+      {from:'in', sender:'SK Mutiara', txt:'Terima kasih Tuan. Sudah kami terima dan sahkan.', masa:'Khamis 08:45'},
+    ]},
+  ],
+  sekolah:[
+    {id:'pps001', nama:'INSP Azman bin Razali', av:'AZ', col:'var(--cyan)', bg:'rgba(0,229,255,0.1)', unread:1,
+     msgs:[
+      {from:'in', sender:'INSP Azman', txt:'Assalamualaikum. Lawatan dijadualkan Selasa 31 Mac jam 9 pagi.', masa:'Isnin 09:30'},
+      {from:'out', txt:'Waalaikumussalam Tuan. Baik, kami akan bersedia.', masa:'Isnin 10:00'},
+      {from:'in', sender:'INSP Azman', txt:'Topik: Anti-Buli dan Keselamatan Siber. Sila sediakan 250 pelajar.', masa:'Isnin 10:05'},
+    ]},
+    {id:'pps006', nama:'INSP Rashid bin Hassan', av:'RS', col:'var(--green)', bg:'rgba(0,230,118,0.1)', unread:0,
+     msgs:[
+      {from:'in', sender:'SIP Rashid', txt:'Lawatan saya 20 Mac berjalan lancar. Terima kasih kerjasama pihak sekolah.', masa:'Khamis 14:00'},
+      {from:'out', txt:'Terima kasih Tuan. Kami juga gembira dengan program tersebut.', masa:'Khamis 14:30'},
+    ]},
+  ],
+  admin:[
+    {id:'pps001', nama:'INSP Azman bin Razali', av:'AZ', col:'var(--cyan)', bg:'rgba(0,229,255,0.1)', unread:0,
+     msgs:[
+      {from:'in', sender:'INSP Azman', txt:'Tuan, laporan Mac sudah dihantar semua. 22/24 lawatan selesai.', masa:'Jumaat 17:00'},
+      {from:'out', txt:'Baik Azman. 2 lagi perlu dilengkapkan minggu depan.', masa:'Jumaat 17:15'},
+    ]},
+    {id:'pps004', nama:'L/K Fatin Syazwina', av:'FS', col:'var(--gold)', bg:'rgba(255,214,0,0.1)', unread:3,
+     msgs:[
+      {from:'out', txt:'Fatin, laporan LWT-2025-183 masih belum dihantar. Sila hantar sebelum Jumaat.', masa:'Isnin 09:00'},
+      {from:'in', sender:'L/KPL Fatin', txt:'Tuan, saya dalam cuti sakit. Akan hantar esok.', masa:'Selasa 11:00'},
+      {from:'in', sender:'L/KPL Fatin', txt:'Maaf Tuan, sudah dihantar. Sila semak.', masa:'Rabu 08:30'},
+      {from:'in', sender:'L/KPL Fatin', txt:'Boleh Tuan sahkan terima laporan saya?', masa:'Rabu 09:00'},
+    ]},
+    {id:'smktawau', nama:'SMK Tawau (Sekolah)', av:'SM', col:'var(--purple)', bg:'rgba(213,0,249,0.1)', unread:0,
+     msgs:[
+      {from:'in', sender:'SMK Tawau', txt:'Tuan Admin, kami ingin memohon program tambahan pada bulan April.', masa:'Khamis 10:00'},
+      {from:'out', txt:'Boleh. Sila hubungi PPS yang ditugaskan iaitu SIP Azman.', masa:'Khamis 10:30'},
+    ]},
+  ]
+};
+
+var curChat = null;
+
+function renderMesejContacts(){
+  var contacts = KENALAN[curRole] || [];
+  var el = document.getElementById('mesej-contacts');
+  if(!el) return;
+  var out = [];
+  contacts.forEach(function(c,i){
+    var lastMsg = c.msgs.length ? c.msgs[c.msgs.length-1].txt.substring(0,22)+'...' : '--';
+    var active = i===0 ? ' active' : '';
+    var unread = c.unread ? '<div class="mc-unread">'+c.unread+'</div>' : '';
+    var div = '<div class="mesej-contact'+active+'" id="mc-'+c.id+'" data-cid="'+c.id+'">';
+    div += '<div class="mc-av" style="background:'+c.bg+';border-color:'+c.col+';color:'+c.col+'">'+c.av+'</div>';
+    div += '<div class="mc-info"><div class="mc-name">'+c.nama+'</div>';
+    div += '<div class="mc-last">'+lastMsg+'</div></div>';
+    div += unread+'</div>';
+    out.push(div);
+  });
+  el.innerHTML = out.join('');
+  el.querySelectorAll('.mesej-contact').forEach(function(d){
+    d.addEventListener('click', function(){ openChat(this.dataset.cid); });
+  });
+  var sel = document.getElementById('mesej-kepada');
+  if(sel){
+    sel.innerHTML = '<option value="">-- Pilih Penerima --</option>';
+    contacts.forEach(function(c){ sel.innerHTML += '<option value="'+c.id+'">'+c.nama+'</option>'; });
+  }
+}
+
+
+function openChat(id){
+  var contacts = KENALAN[curRole] || [];
+  var c = contacts.find(function(x){ return x.id===id; });
+  if(!c) return;
+  curChat = c;
+  c.unread = 0;
+  // Update contact list active state
+  document.querySelectorAll('.mesej-contact').forEach(function(el){ el.classList.remove('active'); });
+  var el = document.getElementById('mc-'+id);
+  if(el){ el.classList.add('active'); var ubdg = el.querySelector('.mc-unread'); if(ubdg) ubdg.remove(); }
+  // Header
+  var hd = document.getElementById('mesej-hd');
+  if(hd){
+    hd.style.display = 'flex';
+    document.getElementById('chat-av').textContent = c.av;
+    document.getElementById('chat-av').style.background = c.bg;
+    document.getElementById('chat-av').style.borderColor = c.col;
+    document.getElementById('chat-av').style.color = c.col;
+    document.getElementById('chat-name').textContent = c.nama;
+  }
+  // Input
+  var iw = document.getElementById('mesej-input-wrap');
+  if(iw) iw.style.display = 'flex';
+  // Render messages
+  renderMsgs(c.msgs);
+}
+
+function renderMsgs(msgs){
+  var body = document.getElementById('mesej-body');
+  if(!body) return;
+  var html = '<div class="msg-date-divider">Minggu ini</div>';
+  msgs.forEach(function(m){
+    if(m.from === 'out'){
+      html += '<div class="msg-bubble out">'
+        + (m.txt.replace(/</g,'&lt;'))
+        + '<div class="msg-time">'+m.masa+'</div>'
+        +'</div>';
+    } else {
+      html += '<div class="msg-bubble in">'
+        +'<div class="msg-sender">'+m.sender+'</div>'
+        +(m.txt.replace(/</g,'&lt;'))
+        +'<div class="msg-time">'+m.masa+'</div>'
+        +'</div>';
+    }
+  });
+  body.innerHTML = html;
+  body.scrollTop = body.scrollHeight;
+}
+
+function sendMsg(){
+  var input = document.getElementById('mesej-input');
+  if(!input || !input.value.trim() || !curChat) return;
+  var txt = input.value.trim();
+  input.value = '';
+  input.style.height = 'auto';
+  var now = new Date();
+  var masa = now.toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'});
+  curChat.msgs.push({from:'out', txt:txt, masa:masa});
+  renderMsgs(curChat.msgs);
+  // Update last msg dalam contact list
+  var lel = document.querySelector('#mc-'+curChat.id+' .mc-last');
+  if(lel) lel.textContent = txt.slice(0,22)+'...';
+}
+
+function handleMsgKey(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+  // Auto resize textarea
+  var t = e.target;
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 80) + 'px';
+}
+
+function hantarMesejBaru(){
+  var kepada = document.getElementById('mesej-kepada').value;
+  var kandungan = document.getElementById('mesej-kandungan').value.trim();
+  if(!kepada || !kandungan){ alert('Sila pilih penerima dan taip mesej!'); return; }
+  var contacts = KENALAN[curRole] || [];
+  var c = contacts.find(function(x){ return x.id===kepada; });
+  if(c){
+    var now = new Date();
+    var masa = now.toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'});
+    c.msgs.push({from:'out', txt:kandungan, masa:masa});
+    closeM('m-mesej-baru');
+    document.getElementById('mesej-kandungan').value = '';
+    openChat(kepada);
+    goPage('pg-mesej');
+  }
+}
+
+
+// Setup rekod lawatan mengikut role
+function setupLawatanPage(){
+  var tag = document.getElementById('lawatan-phtag')||{textContent:''};
+  var sub = document.getElementById('lawatan-sub')||{textContent:''};
+  var addbtn = document.getElementById('lawatan-add-btn')||{style:{}};
+
+  if(curRole === 'sekolah'){
+    if(tag) tag.textContent = 'REKOD LAWATAN · SEKOLAH SAYA';
+    if(sub) sub.textContent = 'SMK Tawau — Hanya rekod lawatan sekolah anda';
+    if(addbtn) addbtn.style.display = 'none'; // Sekolah tak boleh tambah rekod
+    // Tunjuk filter sekolah sendiri sahaja
+    var filters = document.querySelectorAll('#pg-lawatan .frow .fsel');
+    filters.forEach(function(f){ f.style.display='none'; });
+    // Tambah badge
+    var ph = document.querySelector('#pg-lawatan .ph');
+    if(ph && !ph.querySelector('.pantau-badge')){
+      var badge = document.createElement('div');
+      badge.className = 'pantau-badge';
+      badge.innerHTML = '👁 MOD PANTAU — Anda hanya boleh melihat rekod lawatan sekolah anda sendiri';
+      ph.appendChild(badge);
+    }
+  } else if(curRole === 'pps'){
+    if(tag) tag.textContent = 'REKOD LAWATAN · SAYA';
+    if(sub) sub.textContent = 'Rekod lawatan yang anda laksanakan';
+    if(addbtn) addbtn.style.display = 'block';
+  } else if(curRole === 'admin'){
+    if(tag) tag.textContent = 'REKOD LAWATAN · SEMUA';
+    if(sub) sub.textContent = 'Semua lawatan PPS ke seluruh sekolah Daerah Tawau';
+    if(addbtn) addbtn.style.display = 'block';
+  }
+}
+
+
+function kembaliUtama(){
+  doLogout();
+}
+
+
+// ══ FIREBASE HELPERS ══════════════════════════════════════════════════════
+
+async function doLoginFirebase(){
+  const email = document.getElementById('lid').value.trim();
+  const pw    = document.getElementById('lpw').value;
+  const btn   = document.querySelector('.lbtn');
+  if(!email||!pw){alert('Sila masukkan ID dan Kata Laluan!');return;}
+  if(btn){btn.textContent='⏳ MENGESAHKAN...';btn.disabled=true;}
+  try{
+    if(window.FB&&window.FB.auth){
+      var loginEmail=email.includes('@')?email:email.toLowerCase()+'@spas-ipd-tawau.pdrm.gov.my';
+      var cred=await window.FB.signInWithEmailAndPassword(window.FB.auth,loginEmail,pw);
+      var snap=await window.FB.getDoc(window.FB.doc(window.FB.db,'users',cred.user.uid));
+      if(snap.exists()){var d=snap.data();curRole=d.role||curRole;window.FB_USER={uid:cred.user.uid,...d};}
+    }
+  }catch(e){console.log('Firebase login:',e.message);}
+  if(btn){btn.textContent='▶ LOG MASUK SISTEM';btn.disabled=false;}
+}
+
+async function doLogoutFirebase(){
+  try{if(window.FB&&window.FB.auth)await window.FB.signOut(window.FB.auth);}catch(e){}
+  window.FB_USER=null;
+}
+
+async function signupFirebase(role, userData, pw){
+  try{
+    if(!window.FB||!window.FB.auth)return false;
+    var email=userData.badan?
+      userData.badan.toLowerCase().replace('/','')+'@spas-ipd-tawau.pdrm.gov.my':
+      userData.nama.toLowerCase().replace(/\s+/g,'.')+'@spas-ipd-tawau.pdrm.gov.my';
+    userData.email=email;
+    userData.status='pending';
+    userData.createdAt=new Date().toISOString();
+    var cred=await window.FB.createUserWithEmailAndPassword(window.FB.auth,email,pw);
+    await window.FB.setDoc(window.FB.doc(window.FB.db,'users',cred.user.uid),userData);
+    await window.FB.signOut(window.FB.auth);
+    return true;
+  }catch(e){console.log('Firebase signup:',e.message);return false;}
+}
+
+async function uploadFotoProfilFirebase(dataUrl){
+  try{
+    if(!window.FB||!window.FB_USER)return null;
+    var sref=window.FB.ref(window.FB.stor,'profil/'+window.FB_USER.uid+'/foto.jpg');
+    await window.FB.uploadString(sref,dataUrl,'data_url');
+    var url=await window.FB.getDownloadURL(sref);
+    await window.FB.updateDoc(window.FB.doc(window.FB.db,'users',window.FB_USER.uid),{fotoUrl:url});
+    return url;
+  }catch(e){console.log('Upload foto:',e.message);return null;}
+}
+
+function listenMesejFirebase(){
+  if(!window.FB||!window.FB_USER)return;
+  try{
+    var q=window.FB.query(
+      window.FB.collection(window.FB.db,'mesej'),
+      window.FB.where('kepada','==',window.FB_USER.uid)
+    );
+    window.FB.onSnapshot(q,function(snap){
+      var unread=snap.docs.filter(function(d){return !d.data().dibaca;}).length;
+      var bdg=document.querySelector('.bnbdg');
+      if(bdg&&unread>0)bdg.setAttribute('data-count',unread);
+    });
+  }catch(e){}
+}
+
+</script>
+</body>
+</html>
