@@ -690,12 +690,17 @@ let currentRole = 'PPS';
 let listeners = [];
 let charts = {};
 
-function initFirebase() {
-  const apiKey = document.getElementById('cfg-apiKey').value.trim();
-  const authDomain = document.getElementById('cfg-authDomain').value.trim();
-  const databaseURL = document.getElementById('cfg-databaseURL').value.trim();
-  const projectId = document.getElementById('cfg-projectId').value.trim();
-  const appId = document.getElementById('cfg-appId').value.trim();
+// === GANTIKAN CONFIG FIREBASE DI SINI ===
+  const firebaseConfig = {
+
+  apiKey: "AIzaSyBB5e2SC-8ZyQR9QWwS1aArn_ebtr8NWa4",
+  authDomain: "spps-ipdtawau.firebaseapp.com",
+  projectId: "spps-ipdtawau",
+  storageBucket: "spps-ipdtawau.firebasestorage.app",
+  messagingSenderId: "924009676925",
+  appId: "1:924009676925:web:6cf7b9afe61bfc64613114",
+  measurementId: "G-LPWKTCLMC5"
+};
 
   if(!apiKey || !databaseURL || !projectId) {
     showSetupAlert('error','⚠️ Sila isi sekurang-kurangnya API Key, Database URL dan Project ID.');
